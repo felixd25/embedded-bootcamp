@@ -19,6 +19,8 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "spi.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -34,6 +36,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define CS_PORT GPIOB
+#define CS_PIN  GPIO_PIN_8
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -64,8 +68,12 @@ void SystemClock_Config(void);
   */
 int main(void)
 {
-  /* USER CODE BEGIN 1 */
 
+  /* USER CODE BEGIN 1 */
+	uint8_t txData[3] = {0x01, 0x80, 0x00};
+	uint8_t rxData[3];
+	uint32_t adc_data = 0;
+	uint32_t pwm_value = 0;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -87,6 +95,8 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
+  MX_SPI1_Init();
+  MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
 
   /* USER CODE END 2 */
@@ -95,9 +105,16 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  HAL_GPIO_WritePin (CS_PORT, CS_PIN, GPIO_PIN_RESET);
+	  HAL_SPI_TransmitReceive( &hspi1, txData, rxData, 3, HAL_MAX_DELAY);
+	  HAL_GPIO_WritePin (CS_PORT, CS_PIN, GPIO_PIN_SET);
+	  adc_data = (( rxData[1] & 0x03 ) << 8) | rxData[2];
+	  pwm_value =  adc_data * (3200 / 1023) + 3200;
+	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, pwm_value);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  HAL_Delay(10);
   }
   /* USER CODE END 3 */
 }
@@ -122,6 +139,7 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+
   /** Initializes the CPU, AHB and APB buses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
@@ -177,5 +195,3 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
