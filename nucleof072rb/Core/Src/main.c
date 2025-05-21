@@ -109,7 +109,7 @@ int main(void)
 	  HAL_SPI_TransmitReceive( &hspi1, txData, rxData, 3, HAL_MAX_DELAY);
 	  HAL_GPIO_WritePin (CS_PORT, CS_PIN, GPIO_PIN_SET);
 	  adc_data = (( rxData[1] & 0x03 ) << 8) | rxData[2];
-	  pwm_value =  adc_data * (3200 / 1023) + 3200;
+	  pwm_value =  (adc_data * 3200) / 1023 + 3200;
 	  __HAL_TIM_SET_COMPARE(&htim1, TIM_CHANNEL_1, pwm_value);
     /* USER CODE END WHILE */
 
